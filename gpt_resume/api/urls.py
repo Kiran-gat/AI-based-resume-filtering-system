@@ -9,6 +9,10 @@ urlpatterns = [
     # Get list of applicants for a unique job id [Used in Frontend]
     path('get-applicant-list/<uuid:job_u_id>/', ApplicantListAPI.as_view()),
     # Get summary of an applicant - the profile, projects, professional experience, etc. [Used in Frontend]
+
+    path('result/<uuid:job_u_id>/', ApplicantListAPI.as_view()), 
+
+
     path('get-applicant-summary/<uuid:u_id>/', ApplicantSummaryAPI.as_view()),
     # Post multiple pdf files with already existing `job_u_id`
     path('post-resume/', ResumeUploadAPI.as_view()),

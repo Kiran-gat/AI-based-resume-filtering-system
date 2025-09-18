@@ -9,6 +9,12 @@ from api.serializers import ApplicantSerializer
 from api.models import Applicant, College, Project, ProfessionalExperience, Job
 import os
 import json
+import openai
+from django.conf import settings
+
+# Make sure OpenAI uses the key from settings.py
+#openai.api_key = settings.OPENAI_API_KEY
+
 
 # Import for running multiple threads
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -16,21 +22,29 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # External Libraries imports
 import fitz
+
 from openai import OpenAI
 from dotenv import load_dotenv
+
 
 # Load the environment variables (OpenAI API Key)
 load_dotenv()
 
+#if not getattr(settings, "OPENAI_API_KEY", None):
+    #raise RuntimeError("OPENAI_API_KEY not set in settings")
+
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 # Internal code imports
-
 
 class ApplicantHandler:
 
     def __init__(self, applicant: Applicant):
         self.applicant = applicant
-        self.openai = OpenAI(api_key=os.getenv("OAI_API_KEY"))
+        #self.openai = OpenAI(api_key=os.getenv("OAI_API_KEY"))
+
+        self.openai = client 
+
         self.text = self._extract_text_data_from_pdf()
 
     def _update_resume(self, data: dict, relevance: int) -> None:
@@ -52,7 +66,7 @@ class ApplicantHandler:
     def _extract_text_data_from_pdf(self) -> str:
 
 
-
+        
 
         #file_path = os.path.join(settings.MEDIA_ROOT, str(self.applicant.resume))
 
@@ -94,7 +108,7 @@ class ApplicantHandler:
             functions=base_function_prompt,
             function_call="auto",
             temperature=1,
-            # max_tokens=2000,
+            max_tokens=2000,
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
@@ -143,7 +157,7 @@ def handle_applicant(path: str, job: Job):
 
 def manage_pdf_files(files: list, job: Job):
     responses = []
-    with ThreadPoolExecutor(max_workers=6) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         futures = {executor.submit(
             handle_applicant, file, job): file for file in files}
 

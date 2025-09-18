@@ -1,6 +1,7 @@
 from rest_framework import generics, views, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+#from .utils.openai_client import client
 
 
 from .serializers import JobSerializer, ApplicantSerializer, ApplicantSummarySerializer

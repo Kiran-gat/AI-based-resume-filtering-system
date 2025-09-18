@@ -18,23 +18,34 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env",override=True)
+#load_dotenv(dotenv_path=os.path.join(BASE_DIR, ".env"))
 
-
+load_dotenv()
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 #SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or "devsecret"
-DEBUG = os.getenv("DEBUG", "True") == "True"
+#OPENAI_ORG_ID = os.getenv("OPENAI_ORG_ID")
+#OPENAI_PROJECT_ID = os.getenv("OPENAI_PROJECT_ID")
 
+
+#SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or "devsecret"
+DEBUG = os.getenv("DEBUG", "False") == "True"
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    print("OPENAI_API_KEY not loaded!")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "devsecret")
+if not SECRET_KEY:
+    raise RuntimeError("DJANGO_SECRET_KEY not set!")
 
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+#DEBUG = False
 
 
 
@@ -91,12 +102,12 @@ WSGI_APPLICATION = 'gpt_resume.wsgi.application'
     #"http://127.0.0.1:3000",
 #]
 
-#CORS_ALLOWED_ORIGINS = [
-    #"http://localhost:3000",
-    #"http://127.0.0.1:3000"
-#]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -151,4 +162,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/temp_files/'
 MEDIA_ROOT = BASE_DIR/'temp_files'
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+

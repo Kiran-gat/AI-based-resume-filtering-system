@@ -93,34 +93,25 @@ export const ResultPage = () => {
     const [notRecommendedProfiles, setNotRecommendedProfiles] = useState<Applicant[]>([]);
 
 
-    useEffect(() => {
-        if (!job_u_id) return;
-        axios.get(`http://localhost:8000/api/get-applicant-list/77e7faef-4649-471b-8ac7-5961fa3f0c86/?rec`)
-        //axios.get("http://localhost:8000/api/get-applicant-list/3f74d0bc-848d-474d-8f89-f8ede2b83438/?rec")
-     
+  useEffect(() => {
+  if (!job_u_id) return;
+
+  const jobId = Array.isArray(job_u_id) ? job_u_id[0] : job_u_id;
+
+  axios.get(`http://localhost:8000/api/get-applicant-list/${jobId}/?type=rec`)
+    .then((res: AxiosResponse) => {
+      setRecommendedProfiles(res.data || []);
+    })
+    .catch((err: AxiosError) => console.error("Error fetching recommended:", err));
+
+  axios.get(`http://localhost:8000/api/get-applicant-list/${jobId}/?type=norec`)
+    .then((res: AxiosResponse) => {
+      setNotRecommendedProfiles(res.data || []);
+    })
+    .catch((err: AxiosError) => console.error("Error fetching not recommended:", err));
+}, [job_u_id]);
 
 
-       // axios.get(`http://localhost:8000/api/get-applicant-list/${job_u_id}/?rec`)
-        
-
-            .then((response: AxiosResponse) => {
-                console.log(response.data);
-                setRecommendedProfiles(response.data);
-            })
-            .catch((error: AxiosError) => {
-                console.log(error);
-            });
-
-     axios.get(`http://localhost:8000/api/get-applicant-list/77e7faef-4649-471b-8ac7-5961fa3f0c86/?norec`)
-        //axios.get(`http://localhost:8000/api/get-applicant-list/${job_u_id}/?norec`)
-            .then((response: AxiosResponse) => {
-                console.log(response.data);
-                setNotRecommendedProfiles(response.data);
-            })
-            .catch((error: AxiosError) => {
-                console.log(error);
-            });
-    }, [job_u_id]);
 
     return (
         <div className="w-full h-screen px-8 pt-6">
@@ -153,5 +144,7 @@ export const ResultPage = () => {
         </div>
     );
 };
+
+
 
 export default ResultPage;

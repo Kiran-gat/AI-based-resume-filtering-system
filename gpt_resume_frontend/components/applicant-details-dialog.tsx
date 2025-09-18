@@ -1,4 +1,4 @@
-import { Applicant } from "@/pages/result/[string]";
+import { Applicant } from "@/pages/result/[job_u_id]";
 import { Avatar } from "@/components/ui/avatar";
 import {
     Dialog,
