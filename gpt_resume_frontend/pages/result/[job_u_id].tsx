@@ -15,7 +15,6 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
-
 export interface Applicant {
     u_id: string;
     name: string;
@@ -28,27 +27,27 @@ interface ApplicantTableProps {
     applicants: Applicant[];
 }
 
-
-
-
 const getInitials = (fullName?: string) => {
-  if (!fullName || fullName.trim().length === 0) return "";
-  const parts = fullName.trim().split(" ").filter(Boolean);
-  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "";
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    if (!fullName || fullName.trim().length === 0) return "";
+    const parts = fullName.trim().split(" ").filter(Boolean);
+    if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "";
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
+// ✅ Safe resume link generator
+const getResumeLink = (resumePath: string) => {
+    if (!resumePath) return "#";
+    if (resumePath.startsWith("http")) return resumePath;
+    return `http://localhost:8000${resumePath}`;
+};
 
-
-const ApplicantTable = (props: ApplicantTableProps) => {
-    const applicants: Applicant[] = props.applicants;
-
+const ApplicantTable = ({ applicants }: ApplicantTableProps) => {
     return (
         <div>
             <div><NavBar /></div>
             <Table>
                 <TableHeader className="text-md bg-[#F9FAFB]">
-                    <TableRow >
+                    <TableRow>
                         <TableHead className="grow">Name</TableHead>
                         <TableHead>Relevance Score</TableHead>
                         <TableHead>Resume Link</TableHead>
@@ -56,33 +55,47 @@ const ApplicantTable = (props: ApplicantTableProps) => {
                     </TableRow>
                 </TableHeader>
                 <TableBody className="overflow-y-scroll text-sm gap-0">
-                    {applicants.map((applicant: Applicant) => (
-                         
-                         
-
-                        <TableRow key={applicant.u_id || applicant.email} className="p-2 grow">
-                            <TableCell className="flex gap-20 py-1 items-center">
-                                <Avatar className="bg-[#F2F4F7] text-[#667085] font-semibold rounded-full my-auto text-center p-3 text-xs">
-                                    
-                                    {getInitials(applicant?.name)}
-
-
-                                </Avatar>
-                                <div className="flex flex-col justify-between">
-                                    <p className="font-medium text-md">{applicant.name}</p>
-                                    <p className="font-light text-gray-400 text-xs">{applicant.email}</p>
-                                </div>
-                            </TableCell>
-                            <TableCell className="py-1 font-medium text-[#475467] text-sm">{applicant.relevance}</TableCell>
-                            <TableCell className="text-[#5E5ADB] text-sm font-semibold py-1"><a href={`http://localhost:8000${applicant.resume}`} target="_blank">File</a></TableCell>
-                            <TableCell className="text-right font-semibold text-[#475467] text-sm py-1">
-                                <ApplicantDetailDialog u_id={applicant.u_id} name={applicant.name} email={applicant.email} resume={applicant.resume} relevance={applicant.relevance} />
+                    {applicants.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={4} className="text-center text-gray-400 py-4">
+                                No Applicants Found
                             </TableCell>
                         </TableRow>
-                    ))}
+                    ) : (
+                        applicants.map((applicant: Applicant) => (
+                            <TableRow key={applicant.u_id || applicant.email} className="p-2 grow">
+                                <TableCell className="flex gap-4 py-1 items-center">
+                                    <Avatar className="bg-[#F2F4F7] text-[#667085] font-semibold rounded-full my-auto text-center p-3 text-xs">
+                                        {getInitials(applicant?.name)}
+                                    </Avatar>
+                                    <div className="flex flex-col justify-between">
+                                        <p className="font-medium text-md">{applicant.name}</p>
+                                        <p className="font-light text-gray-400 text-xs">{applicant.email}</p>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="py-1 font-medium text-[#475467] text-sm">
+                                    {applicant.relevance}
+                                </TableCell>
+                                <TableCell className="text-[#5E5ADB] text-sm font-semibold py-1">
+                                    <a href={getResumeLink(applicant.resume)} target="_blank" rel="noopener noreferrer">
+                                        File
+                                    </a>
+                                </TableCell>
+                                <TableCell className="text-right font-semibold text-[#475467] text-sm py-1">
+                                    <ApplicantDetailDialog
+                                        u_id={applicant.u_id}
+                                        name={applicant.name}
+                                        email={applicant.email}
+                                        resume={applicant.resume}
+                                        relevance={applicant.relevance}
+                                    />
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    )}
                 </TableBody>
-                </Table>
-            </div>
+            </Table>
+        </div>
     );
 };
 
@@ -92,26 +105,23 @@ export const ResultPage = () => {
     const [recommendedProfiles, setRecommendedProfiles] = useState<Applicant[]>([]);
     const [notRecommendedProfiles, setNotRecommendedProfiles] = useState<Applicant[]>([]);
 
+    useEffect(() => {
+        if (!job_u_id) return;
 
-  useEffect(() => {
-  if (!job_u_id) return;
+        const jobId = Array.isArray(job_u_id) ? job_u_id[0] : job_u_id;
 
-  const jobId = Array.isArray(job_u_id) ? job_u_id[0] : job_u_id;
+        axios.get<Applicant[]>(`http://localhost:8000/api/get-applicant-list/${jobId}/?type=rec`)
+            .then((res: AxiosResponse<Applicant[]>) => {
+                setRecommendedProfiles(res.data || []);
+            })
+            .catch((err: AxiosError) => console.error("Error fetching recommended:", err));
 
-  axios.get(`http://localhost:8000/api/get-applicant-list/${jobId}/?type=rec`)
-    .then((res: AxiosResponse) => {
-      setRecommendedProfiles(res.data || []);
-    })
-    .catch((err: AxiosError) => console.error("Error fetching recommended:", err));
-
-  axios.get(`http://localhost:8000/api/get-applicant-list/${jobId}/?type=norec`)
-    .then((res: AxiosResponse) => {
-      setNotRecommendedProfiles(res.data || []);
-    })
-    .catch((err: AxiosError) => console.error("Error fetching not recommended:", err));
-}, [job_u_id]);
-
-
+        axios.get<Applicant[]>(`http://localhost:8000/api/get-applicant-list/${jobId}/?type=norec`)
+            .then((res: AxiosResponse<Applicant[]>) => {
+                setNotRecommendedProfiles(res.data || []);
+            })
+            .catch((err: AxiosError) => console.error("Error fetching not recommended:", err));
+    }, [job_u_id]);
 
     return (
         <div className="w-full h-screen px-8 pt-6">
@@ -144,7 +154,5 @@ export const ResultPage = () => {
         </div>
     );
 };
-
-
 
 export default ResultPage;

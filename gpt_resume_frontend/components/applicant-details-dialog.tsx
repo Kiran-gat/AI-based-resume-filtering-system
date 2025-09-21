@@ -19,11 +19,12 @@ interface College {
     degree: string;
     start_date: string;
     end_date: string;
-    [key: string]: string;
+    explanation?: string;
+    [key: string]: string | undefined;
 }
 
 interface CollegeTabProps {
-    college: College;
+    colleges: College[];
 }
 
 const CollegeTab = (props: CollegeTabProps) => {
@@ -33,24 +34,27 @@ const CollegeTab = (props: CollegeTabProps) => {
         ["degree", "Degree"],
         ["start_date", "Start"],
         ["end_date", "End"],
+        ["explanation", "Explanation"],
     ]);
-    const college: College = props.college;
+
     return (
         <div className="flex flex-col gap-3 p-3">
-            {Object.keys(college ?? {}).map((key: string) => {
-                return (
-                    <>
-                        {college && college[key] && (
-                            <div className="flex flex-row justify-start gap-2 items-center">
-                                <p className="text-sm font-semibold">
-                                    {COLLEGE_KEY_MAPPING.get(key)}:
-                                </p>
-                                <p className="text-xs text-gray-600">{college[key]}</p>
-                            </div>
-                        )}
-                    </>
-                );
-            })}
+            {props.colleges.map((college: College, idx: number) => (
+                <div key={idx} className="border rounded p-2">
+                    {Object.keys(college ?? {}).map((key: string) => (
+                        <>
+                            {college && college[key] && (
+                                <div className="flex flex-row justify-start gap-2 items-center">
+                                    <p className="text-sm font-semibold">
+                                        {COLLEGE_KEY_MAPPING.get(key) ?? key}:
+                                    </p>
+                                    <p className="text-xs text-gray-600">{college[key]}</p>
+                                </div>
+                            )}
+                        </>
+                    ))}
+                </div>
+            ))}
         </div>
     );
 };
@@ -66,6 +70,7 @@ interface Project {
         duration_in_months: number;
     };
     relevancy: number;
+    explanation?: string;
 }
 
 interface ProjectCardProps {
@@ -86,7 +91,10 @@ const ProjectCard = (props: ProjectCardProps) => {
                 <p className="text-xs text-gray-600">{project.short_description}</p>
                 <div className="flex flex-row flex-wrap gap-1 items-center">
                     {project.tech_stack.map((tech: string, index: number) => (
-                        <div key={index} className="bg-gray-300 rounded-md p-[0.2px] text-center text-nowrap text-xs h-fit">
+                        <div
+                            key={index}
+                            className="bg-gray-300 rounded-md p-[0.2px] text-center text-nowrap text-xs h-fit"
+                        >
                             {tech}
                         </div>
                     ))}
@@ -95,6 +103,11 @@ const ProjectCard = (props: ProjectCardProps) => {
             <p className="w-full text-center text-xs font-semibold">
                 Relevance: {project.relevancy}
             </p>
+            {project.explanation && (
+                <p className="text-xs text-gray-500 mt-1">
+                    Explanation: {project.explanation}
+                </p>
+            )}
         </div>
     );
 };
@@ -126,20 +139,25 @@ interface ProfessionalExperience {
         duration_in_months: number;
     };
     relevance: number;
+    explanation?: string;
 }
 
 interface ProfessionalExperienceCardProps {
     professionalExperience: ProfessionalExperience;
 }
 
-const ProfessionalExperienceCard = (props: ProfessionalExperienceCardProps) => {
+const ProfessionalExperienceCard = (
+    props: ProfessionalExperienceCardProps
+) => {
     const professionalExperience: ProfessionalExperience =
         props.professionalExperience;
     return (
         <div className="border rounded-lg border-grey-600 flex flex-col w-full p-1">
             <div className="flex flex-row justify-between w-full border-b-2 border-gray-600">
                 <div className="flex flex-col">
-                    <p className="font-semibold text-md">{professionalExperience.role}</p>
+                    <p className="font-semibold text-md">
+                        {professionalExperience.role}
+                    </p>
                     <p className="font-semibold text-sm text-gray-500">
                         {professionalExperience.organization}
                     </p>
@@ -154,16 +172,26 @@ const ProfessionalExperienceCard = (props: ProfessionalExperienceCardProps) => {
                     {professionalExperience.short_description}
                 </p>
                 <div className="flex flex-row flex-wrap gap-1 items-center">
-                    {professionalExperience.tech_stack.map((tech: string) => (
-                        <div className="bg-gray-300 rounded-md p-[0.2px] text-center text-nowrap text-xs h-fit">
-                            {tech}
-                        </div>
-                    ))}
+                    {professionalExperience.tech_stack.map(
+                        (tech: string, idx: number) => (
+                            <div
+                                key={idx}
+                                className="bg-gray-300 rounded-md p-[0.2px] text-center text-nowrap text-xs h-fit"
+                            >
+                                {tech}
+                            </div>
+                        )
+                    )}
                 </div>
             </div>
             <p className="w-full text-center text-xs font-semibold">
                 Relevance: {professionalExperience.relevance}
             </p>
+            {professionalExperience.explanation && (
+                <p className="text-xs text-gray-500 mt-1">
+                    Explanation: {professionalExperience.explanation}
+                </p>
+            )}
         </div>
     );
 };
@@ -172,7 +200,9 @@ interface ProfessionalExperienceTabProps {
     professionalExperiences: ProfessionalExperience[];
 }
 
-const ProfessionalExperienceTab = (props: ProfessionalExperienceTabProps) => {
+const ProfessionalExperienceTab = (
+    props: ProfessionalExperienceTabProps
+) => {
     const professionalExperiences: ProfessionalExperience[] =
         props.professionalExperiences;
     return (
@@ -180,6 +210,7 @@ const ProfessionalExperienceTab = (props: ProfessionalExperienceTabProps) => {
             {professionalExperiences.map(
                 (professionalExperience: ProfessionalExperience) => (
                     <ProfessionalExperienceCard
+                        key={professionalExperience.u_id}
                         professionalExperience={professionalExperience}
                     />
                 )
@@ -191,8 +222,9 @@ const ProfessionalExperienceTab = (props: ProfessionalExperienceTabProps) => {
 export const ApplicantDetailDialog = (applicant: Applicant) => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [projects, setProjects] = useState<Project[]>([]);
-    const [professionalExperiences, setProfessionalExperiences] = useState<ProfessionalExperience[]>([]);
-    const [college, setCollege] = useState<College>();
+    const [professionalExperiences, setProfessionalExperiences] =
+        useState<ProfessionalExperience[]>([]);
+    const [colleges, setColleges] = useState<College[]>([]);
 
     useEffect(() => {
         getDetails();
@@ -201,12 +233,16 @@ export const ApplicantDetailDialog = (applicant: Applicant) => {
     const getDetails = () => {
         if (isOpen) {
             axios
-                .get(`http://127.0.0.1:8000/api/get-applicant-summary/${applicant.u_id}/`)
+                .get(
+                    `http://127.0.0.1:8000/api/get-applicant-summary/${applicant.u_id}/`
+                )
                 .then((response: AxiosResponse) => {
                     console.log(response.data);
-                    setCollege(response.data.college);
-                    setProjects([...response.data.projects]);
-                    setProfessionalExperiences([...response.data.professional_experiences]);
+                    setColleges(response.data.college || []);
+                    setProjects(response.data.projects || []);
+                    setProfessionalExperiences(
+                        response.data.professional_experiences || []
+                    );
                 })
                 .catch((error: AxiosError) => {
                     console.log(error);
@@ -230,13 +266,17 @@ export const ApplicantDetailDialog = (applicant: Applicant) => {
                             {applicant.name.split(" ")[0][0]}
                             {
                                 applicant.name.split(" ")[
-                                applicant.name.split(" ").length - 1
+                                    applicant.name.split(" ").length - 1
                                 ][0]
                             }
                         </Avatar>
                         <div className="flex flex-col justify-between">
-                            <p className="font-semibold text-lg">{applicant.name}</p>
-                            <p className=" text-sm text-gray-400 font-regular">{applicant.email}</p>
+                            <p className="font-semibold text-lg">
+                                {applicant.name}
+                            </p>
+                            <p className=" text-sm text-gray-400 font-regular">
+                                {applicant.email}
+                            </p>
                         </div>
                     </DialogTitle>
                     <DialogClose />
@@ -245,16 +285,39 @@ export const ApplicantDetailDialog = (applicant: Applicant) => {
                     <TabsList>
                         <TabsTrigger value="college">College</TabsTrigger>
                         <TabsTrigger value="project">Project</TabsTrigger>
-                        <TabsTrigger value="profexp">Professional Experience</TabsTrigger>
+                        <TabsTrigger value="profexp">
+                            Professional Experience
+                        </TabsTrigger>
                     </TabsList>
                     <TabsContent value="college" className="h-fit">
-                        {college ? <CollegeTab college={college} /> : <p>Please Wait</p>}
+                        {colleges && colleges.length > 0 ? (
+                            <CollegeTab colleges={colleges} />
+                        ) : (
+                            <p>Please Wait</p>
+                        )}
                     </TabsContent>
-                    <TabsContent value="project" className="h-[400px] overflow-y-scroll">
-                        {projects ? <ProjectTab projects={projects} /> : <p>Please Wait</p>}
+                    <TabsContent
+                        value="project"
+                        className="h-[400px] overflow-y-scroll"
+                    >
+                        {projects && projects.length > 0 ? (
+                            <ProjectTab projects={projects} />
+                        ) : (
+                            <p>Please Wait</p>
+                        )}
                     </TabsContent>
-                    <TabsContent value="profexp" className="h-[400px] overflow-y-scroll">
-                        {professionalExperiences ? <ProfessionalExperienceTab professionalExperiences={professionalExperiences} /> : <p>Loading...</p>}
+                    <TabsContent
+                        value="profexp"
+                        className="h-[400px] overflow-y-scroll"
+                    >
+                        {professionalExperiences &&
+                        professionalExperiences.length > 0 ? (
+                            <ProfessionalExperienceTab
+                                professionalExperiences={professionalExperiences}
+                            />
+                        ) : (
+                            <p>Loading...</p>
+                        )}
                     </TabsContent>
                 </Tabs>
             </DialogContent>

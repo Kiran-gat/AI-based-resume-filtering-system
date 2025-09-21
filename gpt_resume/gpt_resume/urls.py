@@ -10,6 +10,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
 
+app_name = "gpt_resume"  # Namespace for URL reversing
 
 def health_check(request):
     """Simple health-check endpoint used during development and smoke tests."""
@@ -17,11 +18,18 @@ def health_check(request):
 
 
 urlpatterns = [
+    # Admin site
     path("admin/", admin.site.urls),
+
+    # API routes
     path("api/", include("api.urls")),
-    path("", health_check, name="health"),
+
+    # Health check endpoints
+    path("", health_check, name="health"),             # root URL returns "OK"
+    path("health/", health_check, name="health-check"),  # /health/ endpoint
 ]
 
-# Serve media files during development only. In production, serve media via your webserver (nginx, s3, etc).
+# Serve media files in development only
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

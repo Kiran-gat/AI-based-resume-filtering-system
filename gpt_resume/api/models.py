@@ -1,4 +1,3 @@
-# gpt_resume/api/models.py
 import os
 import uuid
 from django.db import models
@@ -7,10 +6,10 @@ from django.core.validators import MinValueValidator, MaxValueValidator, FileExt
 
 class Document(models.Model):
     """
-    Stores uploaded resume files. FileField enforces PDF extension via validator.
+    Stores uploaded resume files.
     """
     document = models.FileField(
-        upload_to="resume/",
+        upload_to="resumes/",
         validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
         verbose_name="Applicant's Resume",
     )
@@ -25,33 +24,42 @@ class Document(models.Model):
 
 class Job(models.Model):
     """
-    Job posting model. Uses UUID as primary key.
+    Job posting model.
     """
     u_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     job_title = models.TextField(blank=False, verbose_name="Job Title")
     job_description = models.TextField(blank=False, verbose_name="Job Description")
 
     def __str__(self):
-        # Keep it short for admin display
-        return (self.job_title[:80] + "...") if len(self.job_title or "") > 80 else (self.job_title or str(self.u_id))
+        if self.job_title:
+            return (self.job_title[:80] + "...") if len(self.job_title) > 80 else self.job_title
+        return str(self.u_id)
 
 
 class Applicant(models.Model):
     """
-    Applicant record. 'resume' stores the path or URL to the resume (string).
-    'resume_text' stores extracted text (optional).
+    Applicant record.
     """
     u_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.TextField(blank=True, verbose_name="Applicant's Name")
     email = models.EmailField(blank=True, verbose_name="Applicant's Email")
-    resume = models.TextField(blank=False, verbose_name="Applicant's Resume Path")
-    resume_text = models.TextField(blank=True, verbose_name="Applicant's Resume Text Content")
-    job_applied = models.ForeignKey(Job, on_delete=models.CASCADE, verbose_name="Job Applied For")
+    resume = models.FileField(
+        upload_to="resumes/",
+        validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
+        verbose_name="Applicant's Resume File",
+    )
+    resume_text = models.TextField(blank=True, verbose_name="Extracted Resume Text")
+    parsed = models.JSONField(blank=True, null=True, verbose_name="Parsed Resume Data")
+    job_applied = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="applicants", verbose_name="Job Applied For")
     relevance = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         verbose_name="Relevance Score",
     )
+    embedding_stored = models.BooleanField(default=False, verbose_name="Embedding Stored Flag")
+    
+    # ✅ Already exists (keep it)
+    explanation = models.TextField(blank=True, verbose_name="AI Ranking Explanation")
 
     def __str__(self):
         return self.name or str(self.u_id)
@@ -59,16 +67,18 @@ class Applicant(models.Model):
 
 class College(models.Model):
     """
-    College details. One-to-one with Applicant (single college record per applicant).
+    College details. Each applicant may have multiple colleges (e.g., undergrad + masters).
     """
     u_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.TextField(blank=True, verbose_name="College Name")
     branch = models.TextField(blank=True, verbose_name="Branch of Study")
     degree = models.TextField(blank=True, verbose_name="Degree")
-    # max_length=7 suggests YYYY-MM format; kept as-is
-    start_date = models.CharField(max_length=7, blank=True, null=True, verbose_name="Start Date")
-    end_date = models.CharField(max_length=7, blank=True, null=True, verbose_name="End Date")
-    applicant = models.OneToOneField(Applicant, on_delete=models.CASCADE, related_name="college")
+    start_date = models.DateField(blank=True, null=True, verbose_name="Start Date")
+    end_date = models.DateField(blank=True, null=True, verbose_name="End Date")
+    applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE, related_name="colleges")
+
+    # ✅ New field
+    explanation = models.TextField(blank=True, verbose_name="Relevance Explanation")
 
     def __str__(self):
         return f"{self.name or 'College'} - {self.degree or ''}"
@@ -76,8 +86,7 @@ class College(models.Model):
 
 class Project(models.Model):
     """
-    Project entries related to an applicant. tech_stack and time_duration are JSON fields.
-    Defaults prevent missing-key errors when creating instances without these fields.
+    Projects related to an applicant.
     """
     u_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.TextField(blank=True, verbose_name="Project Title")
@@ -88,8 +97,11 @@ class Project(models.Model):
     relevance = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(5)],
-        verbose_name="Relevance Score",
+        verbose_name="Project Relevance Score",
     )
+    
+    # ✅ New field
+    explanation = models.TextField(blank=True, verbose_name="Project Relevance Explanation")
 
     def __str__(self):
         return self.title or f"Project {self.u_id}"
@@ -97,7 +109,7 @@ class Project(models.Model):
 
 class ProfessionalExperience(models.Model):
     """
-    Professional experience entries for an applicant.
+    Professional experiences for an applicant.
     """
     u_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     role = models.TextField(blank=True, verbose_name="Role")
@@ -109,8 +121,11 @@ class ProfessionalExperience(models.Model):
     relevance = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(10)],
-        verbose_name="Relevance Score",
+        verbose_name="Experience Relevance Score",
     )
+    
+    # ✅ New field
+    explanation = models.TextField(blank=True, verbose_name="Experience Relevance Explanation")
 
     def __str__(self):
         return f"{self.role or 'Experience'} @ {self.organization or ''}"
